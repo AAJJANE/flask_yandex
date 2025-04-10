@@ -210,7 +210,7 @@ def departments():
     db_sess = db_session.create_session()
     departments = db_sess.query(Department).all()
     params = {
-        'title': 'Departments log',
+        'title': 'List of Departments',
         'departments': departments
     }
     return render_template('departments.html', **params)
@@ -218,7 +218,7 @@ def departments():
 @app.route('/add_departments', methods=['GET', 'POST'])
 def add_departments():
     if request.method == 'GET':
-        return render_template('add_departments.html', title='Adding a department', form=DepartmentFormFactory()())
+        return render_template('_base_form.html', title='Adding a department', form=DepartmentFormFactory()())
     db_sess = db_session.create_session()
     department = Department()
     form = DepartmentFormFactory(db_sess)(request.form, obj=department)
@@ -227,7 +227,7 @@ def add_departments():
         db_sess.merge(department)
         db_sess.commit()
         return redirect('/departments')
-    return render_template('add_departments.html', title='Adding a department', form=form)
+    return render_template('_base_form.html', title='Adding a department', form=form)
 
 
 @app.route('/departments_delete/<int:_id>')
@@ -242,6 +242,25 @@ def departments_delete(_id):
     db_sess.delete(department)
     db_sess.commit()
     return redirect('/departments')
+
+
+@app.route('/departments/<int:_id>', methods=['GET', 'POST'])
+@login_required
+def edit_departments(_id):
+    db_sess = db_session.create_session()
+    department = db_sess.get(Department, _id)
+    if department is None:
+        abort(404)
+    if not (department.chief_obj == current_user or current_user.is_admin()):
+        abort(403)
+    form = DepartmentFormFactory(db_sess)(request.form, obj=department)
+    if request.method == "GET":
+        return render_template('_base_form.html', title='Editing department', form=form)
+    if form.validate() and request.method == 'POST':
+        form.populate_obj(department)
+        db_sess.merge(department)
+        db_sess.commit()
+        return redirect('/departments')
 
 
 if __name__ == '__main__':
