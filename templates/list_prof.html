@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>
+        Список профессий:
+    </h1>
+    {% if tag in ('ol', 'ul') %}
+        <{{ tag }}>
+            {% for item in profs %}
+                <li>
+                    {{ item }}
+                </li>
+            {% endfor %}
+        </{{ tag }}>
+    {% else %}
+        <div class="alert alert-danger">
+            Неверный тип тега "{{ tag }}"
+        </div>
+    {% endif %}
+{% endblock %}

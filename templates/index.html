@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h3 class="text-center">{{ title }}</h3>
+    {% if current_user.is_authenticated %}
+        <a href="jobs" class="btn btn-secondary">Add job</a>
+        <a href="/departments" class="btn btn-secondary">Departments</a>
+    {% endif %}
+    <table class="table">
+        {% for job in jobs %}
+            <div>
+                <thead>
+                    <tr>
+                        <td colspan="5">
+                            <h4>Action # {{ job.id }}</h4>
+                            {% if current_user.is_authenticated and current_user == job.team_leader_obj %}
+                                <div>
+                                    <a href="/jobs/{{ job.id }}" class="btn btn-warning">
+                                        Edit
+                                    </a>
+                                    <a onclick="showDeleteModal({{ job.id }}, '{{ job.job }}')" class="btn btn-danger">
+                                        Remove
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr class="table-secondary">
+                        <th>Title of activity</th>
+                        <th class="text-center">Team leader</th>
+                        <th class="text-center">Duration</th>
+                        <th class="text-center">List of collaborators</th>
+                        <th class="text-center">Is finished</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>{{ job.job }}</td>
+                        <td class="text-center">{{ job.team_leader_obj.fullname }}</td>
+                        <td class="text-center">{{ job.work_size }} hours</td>
+                        <td class="text-center">{{ job.collaborators }}</td>
+                        {% if job.is_finished %}
+                            <td class="table-success text-center">Is finished</td>
+                        {% else %}
+                            <td class="table-danger text-center">Is not finished</td>
+                        {% endif %}
+                    </tr>
+                </tbody>
+
+            </div>
+        {% endfor %}
+    </table>
+
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5" id="deleteModalLabel">Removing job</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+              <p>You really want to remove <strong>Action # <span id="deleteModalId">%id%</span></strong></p>
+              <p>"<i id="deleteModalTitle"></i>" ?</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <a id="deleteModalBtn" href="" class="btn btn-danger">REMOVE</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+        const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+        function showDeleteModal(id, title) {
+            document.getElementById('deleteModalId').innerText = '' + id;
+            document.getElementById('deleteModalTitle').innerText = title;
+            document.getElementById('deleteModalBtn').setAttribute('href', `/jobs_delete/${id}`);
+            deleteModal.show();
+        }
+    </script>
+{% endblock %}
