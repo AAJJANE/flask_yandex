@@ -30,10 +30,13 @@ def load_user(user_id: id) -> User | None:
 def index():
     db_sess = db_session.create_session()
     jobs = db_sess.query(Jobs).all()
+    for job in jobs:
+        print(job.department)
     params = {
         'title': 'Works log',
         'jobs': jobs
     }
+
     return render_template('index.html', **params)
 
 

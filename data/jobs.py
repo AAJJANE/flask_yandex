@@ -19,6 +19,9 @@ class Jobs(SqlAlchemyBase):
     end_date = sa.Column(sa.Date, nullable=True)
     is_finished = sa.Column(sa.Boolean, nullable=True)
 
+    department_id = sa.Column(sa.Integer, sa.ForeignKey("departments.id"))
+    department = orm.relationship("Department", back_populates="jobs")
+
     team_leader_obj = orm.relationship(User,
                                        backref="jobs_team_leader")
     collaborators_objs = orm.relationship("User",
@@ -56,5 +59,7 @@ jobs_user = sa.Table(
     'jobs_user',
     SqlAlchemyBase.metadata,
     sa.Column('jobs', sa.Integer, sa.ForeignKey('jobs.id'), primary_key=True),
-    sa.Column('users', sa.Integer, sa.ForeignKey('users.id'), primary_key=True)
+    sa.Column('users', sa.Integer, sa.ForeignKey('users.id'), primary_key=True),
+    sa.Column('department', sa.Integer, sa.ForeignKey("departments.id"), nullable=True)
+
 )

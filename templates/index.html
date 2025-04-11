@@ -30,6 +30,7 @@
                         <th class="text-center">Team leader</th>
                         <th class="text-center">Duration</th>
                         <th class="text-center">List of collaborators</th>
+                        <th class="text-center">Department</th>
                         <th class="text-center">Is finished</th>
                     </tr>
                 </thead>
@@ -38,7 +39,14 @@
                         <td>{{ job.job }}</td>
                         <td class="text-center">{{ job.team_leader_obj.fullname }}</td>
                         <td class="text-center">{{ job.work_size }} hours</td>
-                        <td class="text-center">{{ job.collaborators }}</td>
+
+                        {% if job.collaborators %}
+                            <td class="text-center">{{ job.collaborators }}</td>
+                        {% else %}
+                            <td class="text-center">No collaborators</td>
+                        {% endif %}
+
+                        <td class="text-center">{{ job.department }}</td>
                         {% if job.is_finished %}
                             <td class="table-success text-center">Is finished</td>
                         {% else %}

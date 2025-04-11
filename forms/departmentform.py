@@ -2,7 +2,7 @@ from typing import Type
 
 from wtforms import SubmitField
 from wtforms.form import Form
-from wtforms.validators import DataRequired, NumberRange
+from wtforms.validators import DataRequired
 from wtforms_sqlalchemy.orm import model_form
 
 from sqlalchemy.orm import Session

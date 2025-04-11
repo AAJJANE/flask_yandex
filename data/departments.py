@@ -18,6 +18,7 @@ class Department(SqlAlchemyBase):
     members_objs = orm.relationship("User",
                                     secondary="department_user",
                                     backref="departments_member")
+    jobs = orm.relationship("Jobs", back_populates="department")
 
     @property
     def members(self) -> str:
@@ -40,7 +41,7 @@ class Department(SqlAlchemyBase):
             db_sess.rollback()
 
     def __str__(self) -> str:
-        return f'<Department {self.id}: {self.title}>'
+        return f'Department {self.id}: {self.title}'
 
     def __repr__(self) -> str:
         return self.__str__()
