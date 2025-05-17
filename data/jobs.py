@@ -2,11 +2,12 @@ import sys
 
 import sqlalchemy as sa
 from sqlalchemy import orm
+from sqlalchemy_serializer import SerializerMixin
 
 from .__db_session import SqlAlchemyBase, create_session
 
 
-class Jobs(SqlAlchemyBase):
+class Jobs(SqlAlchemyBase, SerializerMixin):
     from .users import User
 
     __tablename__ = 'jobs'
@@ -17,10 +18,8 @@ class Jobs(SqlAlchemyBase):
     work_size = sa.Column(sa.Integer, nullable=True)
     start_date = sa.Column(sa.Date, nullable=True)
     end_date = sa.Column(sa.Date, nullable=True)
-    is_finished = sa.Column(sa.Boolean, nullable=True)
-
-    department_id = sa.Column(sa.Integer, sa.ForeignKey("departments.id"))
-    department = orm.relationship("Department", back_populates="jobs")
+    is_finished = sa.Column(sa.Boolean, nullable=True, default=False)
+    price = sa.Column(sa.DECIMAL(2), nullable=True)
 
     team_leader_obj = orm.relationship(User,
                                        backref="jobs_team_leader")
@@ -54,12 +53,13 @@ class Jobs(SqlAlchemyBase):
     def __repr__(self) -> str:
         return self.__str__()
 
+    def __int__(self) -> int:
+        return self.id
+
 
 jobs_user = sa.Table(
     'jobs_user',
     SqlAlchemyBase.metadata,
     sa.Column('jobs', sa.Integer, sa.ForeignKey('jobs.id'), primary_key=True),
-    sa.Column('users', sa.Integer, sa.ForeignKey('users.id'), primary_key=True),
-    sa.Column('department', sa.Integer, sa.ForeignKey("departments.id"), nullable=True)
-
+    sa.Column('users', sa.Integer, sa.ForeignKey('users.id'), primary_key=True)
 )

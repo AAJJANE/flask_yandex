@@ -4,3 +4,6 @@ Flask-WTF~=1.2.2
 SQLAlchemy~=2.0.40
 email-validator~=2.2.0
 WTForms-SQLAlchemy~=0.4.2
+SQLAlchemy-serializer~=1.4.22
+Flask-RESTful~=0.3.10
+alembic~=1.15.2

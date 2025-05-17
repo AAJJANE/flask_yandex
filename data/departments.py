@@ -2,11 +2,12 @@ import sys
 
 import sqlalchemy as sa
 from sqlalchemy import orm
+from sqlalchemy_serializer import SerializerMixin
 
 from .__db_session import SqlAlchemyBase, create_session
 
 
-class Department(SqlAlchemyBase):
+class Department(SqlAlchemyBase, SerializerMixin):
     __tablename__ = 'departments'
 
     id = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
@@ -18,7 +19,6 @@ class Department(SqlAlchemyBase):
     members_objs = orm.relationship("User",
                                     secondary="department_user",
                                     backref="departments_member")
-    jobs = orm.relationship("Jobs", back_populates="department")
 
     @property
     def members(self) -> str:
@@ -41,10 +41,13 @@ class Department(SqlAlchemyBase):
             db_sess.rollback()
 
     def __str__(self) -> str:
-        return f'Department {self.id}: {self.title}'
+        return f'<Department {self.id}: {self.title}>'
 
     def __repr__(self) -> str:
         return self.__str__()
+
+    def __int__(self) -> int:
+        return self.id
 
 
 department_user = sa.Table(

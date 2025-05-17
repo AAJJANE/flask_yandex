@@ -1,12 +1,13 @@
 import datetime
 import sqlalchemy as sa
 from flask_login import UserMixin
+from sqlalchemy_serializer import SerializerMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from .__db_session import SqlAlchemyBase
 
 
-class User(SqlAlchemyBase, UserMixin):
+class User(SqlAlchemyBase, UserMixin, SerializerMixin):
     __tablename__ = 'users'
 
     id = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
@@ -31,6 +32,9 @@ class User(SqlAlchemyBase, UserMixin):
 
     def __repr__(self) -> str:
         return f'<User {self.id}: {self.surname} {self.name}>'
+
+    def __int__(self) -> int:
+        return self.id
 
     @property
     def fullname(self) -> str:

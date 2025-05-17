@@ -1,24 +1,23 @@
 import datetime
-
-from flask import Flask, render_template, request, redirect, make_response, session, abort
+from flask import Flask, render_template, request, redirect, make_response, abort, jsonify
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-
+from flask_restful import Api
 from data import __db_session as db_session
-from data.departments import Department
 
 db_session.global_init("db/database.sqlite")
 
-from forms import (SelectionForm, LoginForm, ExtraLoginForm, RegisterForm,
-                   JobFormFactory, DepartmentFormFactory)
+from forms import SelectionForm, LoginForm, ExtraLoginForm, RegisterForm, JobFormFactory
 
 from data.users import User
 from data.jobs import Jobs
-
+from api import jobs as jobs_api
+from api import users as users_api
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
 login_manager = LoginManager()
 login_manager.init_app(app)
+api = Api(app)
 
 
 @login_manager.user_loader
@@ -30,13 +29,10 @@ def load_user(user_id: id) -> User | None:
 def index():
     db_sess = db_session.create_session()
     jobs = db_sess.query(Jobs).all()
-    for job in jobs:
-        print(job.department)
     params = {
         'title': 'Works log',
         'jobs': jobs
     }
-
     return render_template('index.html', **params)
 
 
@@ -159,9 +155,9 @@ def answer(form=None):
     return render_template('auto_answer.html', **data)
 
 
-@app.route('/jobs',  methods=['GET', 'POST'])
+@app.route('/jobs', methods=['GET', 'POST'])
 @login_required
-def add_jobs():
+def add_news():
     if request.method == 'GET':
         return render_template('_base_form.html', title='Adding job', form=JobFormFactory()())
     db_sess = db_session.create_session()
@@ -177,14 +173,14 @@ def add_jobs():
 
 @app.route('/jobs/<int:_id>', methods=['GET', 'POST'])
 @login_required
-def edit_jobs(_id):
+def edit_news(_id):
     db_sess = db_session.create_session()
     job = db_sess.get(Jobs, _id)
     if job is None:
         abort(404)
     if not (job.team_leader_obj == current_user or current_user.is_admin()):
         abort(403)
-    form = JobFormFactory(db_sess)(request.form, obj=job)
+    form = JobFormFactory(db_sess, "Save")(request.form, obj=job)
     if request.method == "GET":
         return render_template('_base_form.html', title='Editing job', form=form)
     if form.validate() and request.method == 'POST':
@@ -201,72 +197,28 @@ def jobs_delete(_id):
     job = db_sess.get(Jobs, _id)
     if job is None:
         abort(404)
-    if not (job.team_leader_obj == current_user or current_user.is_admin()):
+    if job.team_leader_obj != current_user:
         abort(403)
     db_sess.delete(job)
     db_sess.commit()
     return redirect('/')
 
 
-@app.route('/departments')
-def departments():
-    db_sess = db_session.create_session()
-    departments = db_sess.query(Department).all()
-    params = {
-        'title': 'List of Departments',
-        'departments': departments
-    }
-    return render_template('departments.html', **params)
-
-@app.route('/add_departments', methods=['GET', 'POST'])
-def add_departments():
-    if request.method == 'GET':
-        return render_template('_base_form.html', title='Adding a department', form=DepartmentFormFactory()())
-    db_sess = db_session.create_session()
-    department = Department()
-    form = DepartmentFormFactory(db_sess)(request.form, obj=department)
-    if form.validate() and request.method == 'POST':
-        form.populate_obj(department)
-        db_sess.merge(department)
-        db_sess.commit()
-        return redirect('/departments')
-    return render_template('_base_form.html', title='Adding a department', form=form)
+@app.errorhandler(404)
+def not_found(error):
+    print(error)
+    return make_response(jsonify({'error': 'Not found'}), 404)
 
 
-@app.route('/departments_delete/<int:_id>')
-@login_required
-def departments_delete(_id):
-    db_sess = db_session.create_session()
-    department = db_sess.get(Department, _id)
-    if department is None:
-        abort(404)
-    if not (department.chief_obj == current_user or current_user.is_admin()):
-        abort(403)
-    db_sess.delete(department)
-    db_sess.commit()
-    return redirect('/departments')
-
-
-@app.route('/departments/<int:_id>', methods=['GET', 'POST'])
-@login_required
-def edit_departments(_id):
-    db_sess = db_session.create_session()
-    department = db_sess.get(Department, _id)
-    if department is None:
-        abort(404)
-    if not (department.chief_obj == current_user or current_user.is_admin()):
-        abort(403)
-    form = DepartmentFormFactory(db_sess)(request.form, obj=department)
-    if request.method == "GET":
-        return render_template('_base_form.html', title='Editing department', form=form)
-    if form.validate() and request.method == 'POST':
-        form.populate_obj(department)
-        db_sess.merge(department)
-        db_sess.commit()
-        return redirect('/departments')
+@app.errorhandler(400)
+def bad_request(error):
+    print(error)
+    return make_response(jsonify({'error': 'Bad Request'}), 400)
 
 
 if __name__ == '__main__':
     app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
     app.config['PERMANENT_SESSION_LIFETIME'] = datetime.timedelta(days=365)
+    app.register_blueprint(jobs_api.blueprint)
+    app.register_blueprint(users_api.blueprint)
     app.run(port=8080, debug=True)

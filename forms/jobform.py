@@ -29,10 +29,13 @@ FIELD_ARGS = {
 }
 
 
-def JobFormFactory(session: Session | None = None) -> Type[Form]:
+def JobFormFactory(
+        session: Session | None = None,
+        submitText: str | None = None
+) -> Type[Form]:
     session = session or __db_session.create_session()
 
     class JobForm(model_form(jobs.Jobs, session, field_args=FIELD_ARGS)):
-        submit = SubmitField('Done')
+        submit = SubmitField(submitText or 'Create')
 
     return JobForm
