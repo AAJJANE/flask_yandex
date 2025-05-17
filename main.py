@@ -1,4 +1,6 @@
 import datetime
+
+import requests
 from flask import Flask, render_template, request, redirect, make_response, abort, jsonify
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_restful import Api
@@ -102,7 +104,7 @@ def logout():
 
 
 @app.route('/register', methods=['GET', 'POST'])
-def reqister():
+def register():
     form = RegisterForm()
     if form.validate_on_submit():
         db_sess = db_session.create_session()
@@ -117,7 +119,8 @@ def reqister():
             position=form.position.data,
             speciality=form.speciality.data,
             address=form.address.data,
-            email=form.email.data
+            email=form.email.data,
+            city_from=form.city_from.data,
         )
         user.set_password(form.password.data)
         db_sess.add(user)
@@ -204,6 +207,32 @@ def jobs_delete(_id):
     return redirect('/')
 
 
+@app.route('/users_show/<int:user_id>')
+def show_user(user_id):
+    db_sess = db_session.create_session()
+    user = db_sess.query(User).get(user_id)
+    if not user or not user.city_from:
+        abort(404)
+
+    city = user.city_from
+    api_key = '8013b162-6b42-4997-9691-77b7074026e0'
+    geocode_url = f"https://geocode-maps.yandex.ru/1.x/?apikey={api_key}&geocode={city}&format=json"
+
+    response = requests.get(geocode_url)
+    if response.status_code != 200:
+        abort(500)
+
+    try:
+        geo_object = response.json()["response"]["GeoObjectCollection"]["featureMember"][0]["GeoObject"]
+        coords = geo_object["Point"]["pos"]
+        long, lat = coords.split()
+        map_url = f"https://static-maps.yandex.ru/1.x/?ll={long},{lat}&size=600,400&z=10&l=sat&pt={long},{lat},pm2rdm"
+    except (IndexError, KeyError):
+        abort(404)
+
+    return render_template("user_map.html", user=user, map_url=map_url, title='Hometown')
+
+
 @app.errorhandler(404)
 def not_found(error):
     print(error)
@@ -219,6 +248,6 @@ def bad_request(error):
 if __name__ == '__main__':
     app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
     app.config['PERMANENT_SESSION_LIFETIME'] = datetime.timedelta(days=365)
-    app.register_blueprint(jobs_api.blueprint)
     app.register_blueprint(users_api.blueprint)
-    app.run(port=8080, debug=True)
+    app.register_blueprint(jobs_api.blueprint)
+    app.run(port=8080, host='127.0.0.1', debug=True)

@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="text-align: center;">
+    <h2>Nostalgy<br>{{ user.name }} {{ user.surname }}</h2>
+    <p>Hometown {{ user.city_from }}</p>
+    <img src="{{ map_url }}" alt="City map">
+</div>
+{% endblock %}

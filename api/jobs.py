@@ -15,35 +15,22 @@ blueprint = Blueprint(
     template_folder='templates'
 )
 
-"""не знаю, права ли я на самом деле, но я считаю что на уроке добавление работы
-   не работало из-за того, что work_size почему-то был во вне основного блока в json.
-   Для надёжности, я решила заполнить словарь в ручную, и всё заработало :)"""
+JOB_ATTRS = (
+    'id', 'job', 'work_size', 'start_date', 'end_date', 'is_finished',
+    'team_leader_obj.id', 'team_leader_obj.name', 'team_leader_obj.surname',
+    'team_leader_obj.age', 'team_leader_obj.position', 'team_leader_obj.speciality',
+    'team_leader_obj.address', 'team_leader_obj.email', 'team_leader_obj.modified_date',
+    'collaborators_objs.id'
+)
 
 
 @blueprint.route('/api/jobs')
 def get_jobs():
     db_sess = db_session.create_session()
     jobs = db_sess.query(Jobs).all()
-    result = []
-
-    for job in jobs:
-        result.append({
-            'job_info': {
-                'job': job.job,
-                'work_size': job.work_size,
-                'start_date': job.start_date.isoformat(),
-                'end_date': job.end_date.isoformat() if job.end_date else None,
-            },
-            'is_finished': job.is_finished,
-            'team_leader': {
-                'id': job.team_leader_obj.id,
-                'name': job.team_leader_obj.name,
-                'surname': job.team_leader_obj.surname
-            },
-            'collaborators': [user.id for user in job.collaborators_objs]
-        })
-
-    return jsonify({'jobs': result})
+    return jsonify({
+        'jobs': [job.to_dict(only=JOB_ATTRS) for job in jobs]
+    })
 
 
 @blueprint.route('/api/jobs/<int:_id>', methods=['GET'])
@@ -112,37 +99,3 @@ def create_job():
     except Exception as e:
         print(e)
         return make_response(jsonify({'error': 'Bad request'}), 400)
-
-@blueprint.route('/api/jobs/<int:_id>', methods=['PUT'])
-@check_exists(Jobs)
-def edit_job(job: Jobs):
-    if not request.json:
-        return make_response(jsonify({'error': 'Empty request'}), 400)
-
-    db_sess = Session.object_session(job)
-    data = request.json
-
-    try:
-        if 'team_leader_id' in data:
-            if not db_sess.get(User, data['team_leader_id']):
-                return make_response(jsonify({'error': 'Invalid team_leader_id'}), 400)
-            job.team_leader = data['team_leader_id']
-        if 'job' in data:
-            job.job = data['job']
-        if 'work_size' in data:
-            job.work_size = data['work_size']
-        if 'start_date' in data:
-            job.start_date = datetime.datetime.fromisoformat(data['start_date']).date()
-        if 'end_date' in data:
-            job.end_date = datetime.datetime.fromisoformat(data['end_date']).date()
-        if 'is_finished' in data:
-            job.is_finished = 1 if data['is_finished'] else 0
-        if 'collaborators' in data:
-            job.collaborators = ', '.join(map(str, data['collaborators']))
-
-        db_sess.commit()
-        return jsonify({'success': 'OK'})
-    except Exception as e:
-        print(e)
-        return make_response(jsonify({'error': 'Bad request'}), 400)
-
